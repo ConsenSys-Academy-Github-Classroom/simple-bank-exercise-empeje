@@ -38,6 +38,40 @@ contract SimpleBank {
     // Hint: it should take 3 arguments: an accountAddress, withdrawAmount and a newBalance 
     event LogWithdrawal(address accountAddress, uint withdrawAmount, uint newBalance);
 
+    //
+    // Modifiers
+    //
+
+    // @notice onlyEnrolled
+    // Ensures the msg.sender has already been enrolled before executing a function
+    modifier onlyEnrolled {
+        require(
+            enrolled[msg.sender] == true,
+            "Only enrolled accounts can call this function."
+        );
+        _;
+    }
+
+    // @notice notEnrolled
+    // Ensures the msg.sender has not already been enrolled before executing a function
+    modifier notEnrolled {
+        require(
+            enrolled[msg.sender] == false,
+            "Only accounts not enrolled can call this function."
+        );
+        _;
+    }
+
+    // @notice enoughFunds
+    // Ensure use have enough funds
+    modifier enoughFunds(uint withdrawAmount) {
+        require(
+          balances[msg.sender] >= withdrawAmount,
+          "Only withdraw if have enough funds"
+        );
+        _;
+    }
+
     /* Functions
      */
 
@@ -62,7 +96,7 @@ contract SimpleBank {
     /// @notice Enroll a customer with the bank
     /// @return The users enrolled status
     // Emit the appropriate event
-    function enroll() public returns (bool){
+    function enroll() public notEnrolled returns (bool){
       // 1. enroll of the sender of this transaction
       enrolled[msg.sender] = true;
       return enrolled[msg.sender];
@@ -70,7 +104,7 @@ contract SimpleBank {
 
     /// @notice Deposit ether into bank
     /// @return The balance of the user after the deposit is made
-    function deposit() public payable returns (uint) {
+    function deposit() public payable onlyEnrolled returns (uint) {
       // 1. Add the appropriate keyword so that this function can receive ether
     
       // 2. Users should be enrolled before they can make deposits
@@ -91,15 +125,14 @@ contract SimpleBank {
     /// @dev This does not return any excess ether sent to it
     /// @param withdrawAmount amount you want to withdraw
     /// @return The balance remaining for the user
-    function withdraw(uint withdrawAmount) public returns (uint) {
+    function withdraw(uint withdrawAmount) public enoughFunds(withdrawAmount) returns (uint) {
       // If the sender's balance is at least the amount they want to withdraw,
       // Subtract the amount from the sender's balance, and try to send that amount of ether
       // to the user attempting to withdraw. 
       // return the user's balance.
 
       // 1. Use a require expression to guard/ensure sender has enough funds
-      require(balances[msg.sender] >= withdrawAmount);
-
+      
       // 2. Transfer Eth to the sender and decrement the withdrawal amount from
 
       // msg.transfer(withdrawAmount);
